@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pos-dashboard",
+      "runtimeExecutable": "streamlit",
+      "runtimeArgs": [
+        "run",
+        "C:\\Users\\mhdsa\\OneDrive\\ป.โท\\เรียน เทอม 1-69\\240-513 MODULE DATA ENGINEERING PRINCIPLES AND APPLICATIONS MODULE\\Lab\\Lab04-Airflow\\dashboard_app.py",
+        "--server.port",
+        "8502",
+        "--server.headless",
+        "true"
+      ],
+      "port": 8502
+    }
+  ]
+}
