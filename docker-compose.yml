@@ -1,0 +1,47 @@
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: airflow-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    restart: always
+
+  airflow:
+    image: apache/airflow:3.0.2
+    container_name: airflow
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
+      - ./kaggle:/opt/airflow/kaggle
+      - ./tmp/pos_data:/tmp/pos_data
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      # 1. แก้ไขปัญหา Connection หายเมื่อรีสตาร์ท Container (Midterm Conn)
+      AIRFLOW_CONN_POSTGRES_MIDTERM_CONN: "postgresql://airflow:airflow@airflow-postgres:5432/airflow"
+      # 2. แก้ไขปัญหา FileSensor หา fs_default ไม่เจอ
+      AIRFLOW_CONN_FS_DEFAULT: "fs://"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      # สั่งให้ Worker ชี้ Log server มาที่ hostname ของ container หรือ localhost
+      AIRFLOW__LOGGING__WORKER_LOG_SERVER_HOST: 'localhost'
+    command: >
+      bash -c "pip install kaggle pandas psycopg2-binary sqlalchemy &&
+                echo '{\"admin\":\"admin123\"}' > /opt/airflow/simple_auth_manager_passwords.json.generated &&
+                airflow standalone"
+    restart: always
+
+volumes:
+  postgres-db-volume:
