@@ -16,23 +16,30 @@ real-time anomaly monitoring.
 | [`dags/benchmark_*.py`](dags) | Task 4 | Controlled benchmark DAGs comparing `FileSensor` poke / reschedule / deferrable modes |
 | [`dashboard_app.py`](dashboard_app.py) | Task 3 | Streamlit dashboard: KPIs, moving-average chart, anomaly highlighting, auto-refresh |
 | [`docs/`](docs) | Task 4 | Architectural report (benchmark results + scalability proposal), presentation slides, dashboard screenshots |
+| `docker-compose.yml` | — | Self-contained Airflow 3.0.2 + PostgreSQL 16 dev stack, scoped to this folder only |
 
-This repo holds the dashboard + DAG source for submission and Streamlit Cloud deployment.
-The Airflow/PostgreSQL dev stack (`docker-compose.yml`) that produces `pos_transactions`
-lives in a separate local project — **do not add a `docker-compose.yml` here** with the
-same container names, or it will collide with (and blank out) that stack's Postgres volume.
+Everything — generator, DAGs, dashboard, and the dev stack — runs from **this folder**.
+Container names (`pos-airflow`, `pos-postgres`) and ports (Airflow UI `8082`, Postgres
+`5433`) are namespaced so this stack never collides with any other Airflow project on
+the same machine.
 
-## Running the dashboard locally
+## Running the full stack locally
 
 ```bash
+docker compose up -d                     # Airflow UI: http://localhost:8082 (admin/admin123)
+python pos_generator.py                  # writes CSV batches into tmp/pos_data (run from THIS folder)
 pip install -r requirements.txt
-streamlit run dashboard_app.py
+streamlit run dashboard_app.py           # http://localhost:8502
 ```
 
+`pos_resilient_pipeline` picks up new batches on its 5-minute schedule (or trigger it
+manually from the Airflow UI / CLI for an immediate demo run) and loads them into
+`pos_transactions` on `localhost:5433`.
+
 The dashboard reads `POS_DB_URL` (env var locally, or `st.secrets["POS_DB_URL"]` on
-Streamlit Community Cloud). Point it at whichever Postgres currently holds
-`pos_transactions` — a local Docker instance, or the Neon database used for the
-Streamlit Cloud deployment.
+Streamlit Community Cloud) — defaults to `localhost:5433` (this stack's Postgres). For
+the Streamlit Cloud deployment it's pointed at a free [Neon](https://neon.tech) Postgres
+instance instead, since Streamlit Cloud cannot reach a database on `localhost`.
 
 ## Deploying the dashboard (Streamlit Community Cloud)
 

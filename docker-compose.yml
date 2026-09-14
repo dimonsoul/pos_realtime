@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: pos-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - pos-postgres-data:/var/lib/postgresql/data
+    restart: always
+
+  airflow:
+    image: apache/airflow:3.0.2
+    container_name: pos-airflow
+    depends_on:
+      - postgres
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./tmp/pos_data:/tmp/pos_data
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@pos-postgres:5432/airflow
+      AIRFLOW_CONN_POSTGRES_MIDTERM_CONN: "postgresql://airflow:airflow@pos-postgres:5432/airflow"
+      AIRFLOW_CONN_FS_DEFAULT: "fs://"
+      AIRFLOW__LOGGING__WORKER_LOG_SERVER_HOST: "localhost"
+    command: >
+      bash -c "pip install pandas psycopg2-binary sqlalchemy &&
+                echo '{\"admin\":\"admin123\"}' > /opt/airflow/simple_auth_manager_passwords.json.generated &&
+                airflow standalone"
+    restart: always
+
+volumes:
+  pos-postgres-data:

@@ -26,7 +26,7 @@ def _get_db_url() -> str:
         pass
     return os.environ.get(
         "POS_DB_URL",
-        "postgresql+psycopg2://airflow:airflow@localhost:5432/airflow",
+        "postgresql+psycopg2://airflow:airflow@localhost:5433/airflow",
     )
 
 
